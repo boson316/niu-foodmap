@@ -21,6 +21,7 @@ import streamlit.components.v1 as components
 from foodmap.providers import MockRestaurantProvider
 from foodmap.integrity import CoreIntegrityError, author_notice, verify_core_modules
 from foodmap.service import FoodMapService, SortMode
+from foodmap.visit_counter import format_visit_count, increment_visit_count
 from foodmap.wheel import build_wheel_html
 
 _TIER_LABEL = {"low": "低", "medium": "普通", "high": "高"}
@@ -339,6 +340,13 @@ def _render_wheel_selector(df: pd.DataFrame) -> None:
     components.html(build_wheel_html(wheel_items), height=920, scrolling=True)
 
 
+def _track_visit_count() -> str:
+    """Count once per browser session; Streamlit reruns should not inflate totals."""
+    if "visit_count_label" not in st.session_state:
+        st.session_state.visit_count_label = format_visit_count(increment_visit_count())
+    return str(st.session_state.visit_count_label)
+
+
 def run() -> None:
     st.set_page_config(
         page_title="宜大美食地圖",
@@ -353,6 +361,7 @@ def run() -> None:
         st.caption(author_notice())
         st.stop()
     st.markdown(_MOBILE_CSS, unsafe_allow_html=True)
+    visit_label = _track_visit_count()
     default_data = _default_data_path()
     using_cache = bool(default_data)
     lat0, lon0 = _default_campus()
@@ -416,6 +425,8 @@ def run() -> None:
 
     if not payload:
         st.warning("沒有符合條件的餐廳，請放寬半徑或減少最少評論數。")
+        st.divider()
+        st.caption(f"{author_notice()} · {visit_label}")
         return
 
     df = pd.DataFrame(payload)
@@ -444,7 +455,7 @@ def run() -> None:
         _render_wheel_selector(df)
 
     st.divider()
-    st.caption(author_notice())
+    st.caption(f"{author_notice()} · {visit_label}")
 
 
 if __name__ == "__main__":
