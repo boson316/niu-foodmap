@@ -1,0 +1,26 @@
+Copyright (c) 2026 Boson Huang. All Rights Reserved.
+
+Author: Boson Huang
+
+This software and its source code, including but not limited to the scoring
+algorithms in src/foodmap/scoring.py, src/foodmap/service.py, and
+src/foodmap/wheel.py, are proprietary works.
+
+You may NOT, without prior written permission from Boson Huang:
+
+- Copy, modify, merge, publish, distribute, sublicense, or sell copies of
+  this software or any portion of it
+- Reverse engineer, decompile, or attempt to extract the core algorithms
+  for commercial or competitive use
+- Remove or alter copyright notices
+
+Permitted use:
+
+- Accessing the official Streamlit deployment URL provided by the author
+  for personal, non-commercial campus dining reference
+- Academic review of the deployed application behavior as required by course
+  instructors, without redistribution of source code
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+For licensing inquiries, contact the author via the GitHub account boson316.

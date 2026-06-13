@@ -2,6 +2,12 @@
 
 **Languages:** [English](README.md) · [中文](README.zh-TW.md)
 
+**Author:** Boson Huang · **License:** Proprietary — see [LICENSE](LICENSE)
+
+> Core scoring algorithms (`scoring.py`, `service.py`, `wheel.py`) are protected by copyright.
+> Runtime integrity checks block tampered deployments. To reduce public exposure of source code,
+> set this GitHub repository to **Private** (Streamlit Community Cloud still deploys from private repos).
+
 本目錄同時保留 **project_bootstrap** 說明與本學期主題 **校園附近美食地圖**（`src/foodmap/`）。
 
 ---

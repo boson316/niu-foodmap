@@ -2,6 +2,11 @@
 
 **Languages:** [English](README.md) · [中文](README.zh-TW.md)
 
+**作者：** Boson Huang · **授權：** 專有軟體 — 見 [LICENSE](LICENSE)
+
+> 核心演算法（`scoring.py`、`service.py`、`wheel.py`）受著作權保護；部署時會驗證檔案完整性，遭竄改則拒絕啟動。
+> 若不想讓原始碼在 GitHub 上被直接閱讀，請將 repo 設為 **Private**（Streamlit Cloud 仍可部署，公開網址照常分享）。
+
 本目錄同時保留 **project_bootstrap** 說明與本學期主題 **校園附近美食地圖**（`src/foodmap/`）。
 
 ---

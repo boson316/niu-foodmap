@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Boson Huang. All rights reserved. Unauthorized modification prohibited.
 from __future__ import annotations
 
 import json

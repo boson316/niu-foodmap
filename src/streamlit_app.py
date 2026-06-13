@@ -19,6 +19,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from foodmap.providers import MockRestaurantProvider
+from foodmap.integrity import CoreIntegrityError, author_notice, verify_core_modules
 from foodmap.service import FoodMapService, SortMode
 from foodmap.wheel import build_wheel_html
 
@@ -357,6 +358,12 @@ def run() -> None:
         layout="wide",
         initial_sidebar_state="auto",
     )
+    try:
+        verify_core_modules()
+    except CoreIntegrityError as exc:
+        st.error(str(exc))
+        st.caption(author_notice())
+        st.stop()
     st.markdown(_MOBILE_CSS, unsafe_allow_html=True)
     default_data = _default_data_path()
     using_cache = bool(default_data)
@@ -447,6 +454,9 @@ def run() -> None:
 
     with tab_wheel:
         _render_wheel_selector(df)
+
+    st.divider()
+    st.caption(author_notice())
 
 
 if __name__ == "__main__":
