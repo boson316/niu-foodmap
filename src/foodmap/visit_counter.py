@@ -1,4 +1,4 @@
-"""Public visit counter via CountAPI (works on Streamlit Cloud without local storage)."""
+"""Public visit counter via CounterAPI (Streamlit Cloud compatible)."""
 
 from __future__ import annotations
 
@@ -7,9 +7,10 @@ import os
 import urllib.error
 import urllib.request
 
+_API_BASE = "https://api.counterapi.com/v1"
 _DEFAULT_NAMESPACE = "niu-foodmap"
 _DEFAULT_KEY = "pageviews"
-_TIMEOUT_SEC = 5
+_TIMEOUT_SEC = 8
 
 
 def counter_namespace() -> str:
@@ -23,23 +24,31 @@ def counter_key() -> str:
 def _counter_url(action: str) -> str:
     namespace = counter_namespace()
     key = counter_key()
-    return f"https://api.countapi.xyz/{action}/{namespace}/{key}"
+    return f"{_API_BASE}/{action}/{namespace}/{key}"
+
+
+def _parse_value(raw: object) -> int | None:
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, float) and raw.is_integer() and raw >= 0:
+        return int(raw)
+    return None
 
 
 def _fetch_count(url: str) -> int | None:
     req = urllib.request.Request(
         url,
         headers={"User-Agent": "niu-foodmap/1.0 (visit-counter)"},
+        method="GET",
     )
     try:
         with urllib.request.urlopen(req, timeout=_TIMEOUT_SEC) as resp:
             payload = json.loads(resp.read().decode("utf-8"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError, OSError):
         return None
-    value = payload.get("value")
-    if isinstance(value, bool) or not isinstance(value, int):
-        return None
-    return value
+    return _parse_value(payload.get("value"))
 
 
 def increment_visit_count() -> int | None:
