@@ -15,9 +15,9 @@ class CoreIntegrityError(RuntimeError):
 
 
 _CORE_FILES: tuple[tuple[str, str], ...] = (
-    ("scoring.py", "6dd25e8f6dc6d9a703e66e76749406957447057790dd0794b36063f1e8dc97d3"),
-    ("service.py", "84313a93232c59de6603e4747b6be83a9bb6aa7d824dc085d2d8b345817bc8eb"),
-    ("wheel.py", "f1342c4b4d894fe9b11a4c8ef712546e00020d343b58998d0c966fbf4244d716"),
+    ("scoring.py", "eb792d83207a9ac0e9285867aaaf03f98aa00b840054846a99d93924599b61dc"),
+    ("service.py", "61efd7e8ebfd82b5270be32cb1ca0ebfaf3d3f4cba4ca6e1080c630a85330506"),
+    ("wheel.py", "5ab7dbca712ac825f3b0fa9799bf4e418452bbabf3b0f358bd376539790b9df0"),
 )
 
 
@@ -29,7 +29,9 @@ def _module_path(filename: str) -> Path:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Git checkout on Linux uses LF; Windows working copies may use CRLF.
+    normalized = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(normalized).hexdigest()
 
 
 def verify_core_modules() -> None:
