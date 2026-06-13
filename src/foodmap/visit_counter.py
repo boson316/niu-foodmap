@@ -5,27 +5,52 @@ from __future__ import annotations
 import html
 import json
 import os
-import urllib.parse
 
 _DEFAULT_PAGE_URL = "https://niu-foodmap.streamlit.app"
-_SEEYOUFARM_API = "https://hits.seeyoufarm.com/api/count"
+_COUNTERAPI_BASE = "https://api.counterapi.dev/v1"
+_DEFAULT_NAMESPACE = "niu-foodmap"
+_DEFAULT_KEY = "visits"
 _SESSION_STORAGE_KEY = "niu_foodmap_visit_counted"
+_UNAVAILABLE_LABEL = "瀏覽人次統計暫不可用"
 
 
 def counter_page_url() -> str:
     return os.environ.get("VISIT_COUNTER_PAGE_URL", _DEFAULT_PAGE_URL).strip() or _DEFAULT_PAGE_URL
 
 
+def counter_namespace() -> str:
+    return os.environ.get("VISIT_COUNTER_NAMESPACE", _DEFAULT_NAMESPACE).strip() or _DEFAULT_NAMESPACE
+
+
+def counter_key() -> str:
+    return os.environ.get("VISIT_COUNTER_KEY", _DEFAULT_KEY).strip() or _DEFAULT_KEY
+
+
+def counter_api_get_url(*, namespace: str | None = None, key: str | None = None) -> str:
+    ns = namespace or counter_namespace()
+    counter = key or counter_key()
+    return f"{_COUNTERAPI_BASE}/{ns}/{counter}/"
+
+
+def counter_api_up_url(*, namespace: str | None = None, key: str | None = None) -> str:
+    ns = namespace or counter_namespace()
+    counter = key or counter_key()
+    return f"{_COUNTERAPI_BASE}/{ns}/{counter}/up"
+
+
 def format_visit_count(count: int | None) -> str:
     if count is None:
-        return "瀏覽人次統計暫不可用"
+        return _UNAVAILABLE_LABEL
     return f"累計瀏覽 {count:,} 人次"
 
 
 def build_visit_counter_html(page_url: str, *, author_line: str) -> str:
     """Render footer counter in the visitor browser (server outbound HTTP not required)."""
-    page_url_js = json.dumps(page_url)
+    del page_url  # kept for call-site compatibility; counter uses namespace/key instead
+    get_url_js = json.dumps(counter_api_get_url())
+    up_url_js = json.dumps(counter_api_up_url())
     storage_key_js = json.dumps(_SESSION_STORAGE_KEY)
+    unavailable_js = json.dumps(_UNAVAILABLE_LABEL)
     author_html = html.escape(author_line, quote=True)
     return f"""
 <div style="font-size:0.85rem;color:#5f6368;line-height:1.6;padding:0.25rem 0;">
@@ -33,31 +58,27 @@ def build_visit_counter_html(page_url: str, *, author_line: str) -> str:
 </div>
 <script>
 (function () {{
-  const pageUrl = {page_url_js};
+  const getUrl = {get_url_js};
+  const upUrl = {up_url_js};
   const storageKey = {storage_key_js};
+  const unavailableLabel = {unavailable_js};
   const label = document.getElementById("niu-visit-count");
-  const apiBase = "{_SEEYOUFARM_API}";
   const counted = sessionStorage.getItem(storageKey) === "1";
-  const endpoint = counted
-    ? apiBase + "?" + new URLSearchParams({{ url: pageUrl }}).toString()
-    : apiBase + "/incr?" + new URLSearchParams({{ url: pageUrl }}).toString();
+  const endpoint = counted ? getUrl : upUrl;
 
   fetch(endpoint, {{ method: "GET", mode: "cors" }})
     .then(function (response) {{
       if (!response.ok) throw new Error("bad status");
-      return response.text();
+      return response.json();
     }})
-    .then(function (text) {{
-      const value = parseInt(text.trim(), 10);
+    .then(function (payload) {{
+      const value = Number(payload && payload.count);
       if (!Number.isFinite(value) || value < 0) throw new Error("bad value");
-      sessionStorage.setItem(storageKey, "1");
+      if (!counted) sessionStorage.setItem(storageKey, "1");
       label.textContent = "累計瀏覽 " + value.toLocaleString("zh-TW") + " 人次";
     }})
     .catch(function () {{
-      const badgeUrl = "https://hits.seeyoufarm.com/count?" +
-        new URLSearchParams({{ url: pageUrl }}).toString();
-      label.innerHTML = '累計瀏覽 <img src="' + badgeUrl +
-        '" alt="人次" style="height:18px;vertical-align:middle;" />';
+      label.textContent = unavailableLabel;
     }});
 }})();
 </script>
