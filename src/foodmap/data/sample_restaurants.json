@@ -1,0 +1,152 @@
+[
+  {
+    "id": "niu01",
+    "name": "神農路蛋餅店（範例）",
+    "lat": 24.7470,
+    "lon": 121.7460,
+    "rating": 4.6,
+    "review_count": 420,
+    "category": "早餐",
+    "price_level": 1
+  },
+  {
+    "id": "niu02",
+    "name": "宜大學餐自助餐（範例）",
+    "lat": 24.7464,
+    "lon": 121.7457,
+    "rating": 3.9,
+    "review_count": 890,
+    "category": "學餐",
+    "price_level": 1
+  },
+  {
+    "id": "niu03",
+    "name": "進士路鹹酥雞（範例）",
+    "lat": 24.7488,
+    "lon": 121.7472,
+    "rating": 4.4,
+    "review_count": 210,
+    "category": "小吃",
+    "price_level": 1
+  },
+  {
+    "id": "niu04",
+    "name": "舊城南路手搖飲（範例）",
+    "lat": 24.7510,
+    "lon": 121.7530,
+    "rating": 4.2,
+    "review_count": 560,
+    "category": "飲料",
+    "price_level": 1
+  },
+  {
+    "id": "niu05",
+    "name": "女中路深夜拉麵（範例）",
+    "lat": 24.7445,
+    "lon": 121.7491,
+    "rating": 4.5,
+    "review_count": 340,
+    "category": "日式",
+    "price_level": 2
+  },
+  {
+    "id": "niu06",
+    "name": "力行路韓式拌飯（範例）",
+    "lat": 24.7438,
+    "lon": 121.7438,
+    "rating": 4.1,
+    "review_count": 180,
+    "category": "韓式",
+    "price_level": 2
+  },
+  {
+    "id": "niu07",
+    "name": "校門口滷肉飯（範例）",
+    "lat": 24.7460,
+    "lon": 121.7449,
+    "rating": 4.7,
+    "review_count": 1200,
+    "category": "台式",
+    "price_level": 1
+  },
+  {
+    "id": "niu08",
+    "name": "宜中路披薩外帶（範例）",
+    "lat": 24.7501,
+    "lon": 121.7415,
+    "rating": 3.6,
+    "review_count": 95,
+    "category": "西式",
+    "price_level": 2
+  },
+  {
+    "id": "niu09",
+    "name": "民權新路素食便當（範例）",
+    "lat": 24.7423,
+    "lon": 121.7505,
+    "rating": 4.3,
+    "review_count": 150,
+    "category": "素食",
+    "price_level": 1
+  },
+  {
+    "id": "niu10",
+    "name": "凱旋路咖啡自習角（範例）",
+    "lat": 24.7480,
+    "lon": 121.7410,
+    "rating": 4.0,
+    "review_count": 410,
+    "category": "咖啡",
+    "price_level": 2
+  },
+  {
+    "id": "niu11",
+    "name": "宜興路泰式打拋飯（範例）",
+    "lat": 24.7410,
+    "lon": 121.7475,
+    "rating": 4.4,
+    "review_count": 260,
+    "category": "泰式",
+    "price_level": 2
+  },
+  {
+    "id": "niu12",
+    "name": "只有三則評論的網紅店（範例）",
+    "lat": 24.7466,
+    "lon": 121.7462,
+    "rating": 5.0,
+    "review_count": 3,
+    "category": "網美",
+    "price_level": 3
+  },
+  {
+    "id": "niu13",
+    "name": "復興路火鍋吃到飽（範例）",
+    "lat": 24.7390,
+    "lon": 121.7520,
+    "rating": 4.2,
+    "review_count": 720,
+    "category": "火鍋",
+    "price_level": 3
+  },
+  {
+    "id": "niu14",
+    "name": "校園後門甜點工作室（範例）",
+    "lat": 24.7475,
+    "lon": 121.7445,
+    "rating": 4.5,
+    "review_count": 88,
+    "category": "甜點",
+    "price_level": 2
+  },
+  {
+    "id": "niu15",
+    "name": "羅東夜市牛排館（遠距範例）",
+    "lat": 24.6770,
+    "lon": 121.7670,
+    "rating": 4.8,
+    "review_count": 600,
+    "category": "西式",
+    "price_level": 4
+  }
+]
