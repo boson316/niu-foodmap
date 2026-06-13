@@ -1,0 +1,43 @@
+{
+  "project": {
+    "name": "python程式期末實作",
+    "title": "python期末實作",
+    "problem": "宜大校園附近美食地圖：依距離與評價排序，供學生使用（Mock JSON；可擴充 Maps API）",
+    "python": "3.10"
+  },
+  "kpi": {
+    "p95_latency_ms": 120.0,
+    "timeout_rate": 0.002,
+    "cost_per_request": 0.2,
+    "quality_drop_ratio": 0.05,
+    "error_rate": 0.01
+  },
+  "gate": {
+    "use_absolute_kpi": true,
+    "require_relative_improvement": true,
+    "p95_latency_ratio_max": 0.75,
+    "cost_ratio_max": 0.7
+  },
+  "benchmark": {
+    "baseline": {
+      "profile": "baseline",
+      "p95_latency_ms": 180.0,
+      "timeout_rate": 0.005,
+      "cost_per_request": 0.3,
+      "quality_drop_ratio": 0.0,
+      "error_rate": 0.02
+    },
+    "optimized": {
+      "profile": "optimized",
+      "p95_latency_ms": 110.0,
+      "timeout_rate": 0.001,
+      "cost_per_request": 0.18,
+      "quality_drop_ratio": 0.03,
+      "error_rate": 0.005
+    }
+  },
+  "ci": {
+    "cov_fail_under": 70,
+    "python_version": "3.10"
+  }
+}
