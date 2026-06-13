@@ -28,7 +28,9 @@ _WHEEL_TOP_N = 30
 
 _MOBILE_CSS = """
 <style>
-.block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1100px; }
+.block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 100%; }
+[data-testid="stDataFrame"] { width: 100%; }
+[data-testid="stDataFrame"] > div { width: 100%; }
 @media (max-width: 768px) {
   .block-container { padding-left: 0.85rem; padding-right: 0.85rem; }
   [data-testid="stSidebar"] { min-width: 280px !important; }
@@ -86,6 +88,7 @@ def _build_service(data_path_str: str) -> FoodMapService:
 
 _DISPLAY_COLUMNS = (
     "店名",
+    "Google Map",
     "距離",
     "Google 評分",
     "評論數",
@@ -94,7 +97,6 @@ _DISPLAY_COLUMNS = (
     "黃氏星等",
     "綜合分數",
     "星等分級",
-    "Google Maps",
     "分類",
 )
 
@@ -118,6 +120,7 @@ def _build_display_table(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "店名": df["name"],
+            "Google Map": df["maps_url"],
             "距離": df["distance_display"],
             "Google 評分": df["rating"],
             "評論數": df["review_count"],
@@ -126,28 +129,12 @@ def _build_display_table(df: pd.DataFrame) -> pd.DataFrame:
             "黃氏星等": df["huang_rating"],
             "綜合分數": df["composite_score"],
             "星等分級": df["rating_tier"].map(lambda t: _TIER_LABEL.get(str(t), str(t))),
-            "Google Maps": df["maps_url"],
             "分類": df["category"],
         }
     )
 
 
-def _pick_focus_row(ordered: pd.DataFrame) -> pd.Series | None:
-    options = ["（點選表格列或此處選店）", *ordered["name"].tolist()]
-    selected_name = st.selectbox(
-        "在地圖查看",
-        options=options,
-        key="map_focus_select",
-    )
-    if selected_name == options[0]:
-        return None
-    match = ordered.index[ordered["name"] == selected_name]
-    if len(match) == 0:
-        return None
-    return ordered.loc[match[0]]
-
-
-def _render_list_table(df: pd.DataFrame, *, sort_by: str) -> pd.DataFrame:
+def _render_list_table(df: pd.DataFrame, *, sort_by: str) -> pd.Series | None:
     ordered = _ordered_rows(df, sort_by=sort_by).reset_index(drop=True)
     table = _build_display_table(ordered)
     st.caption("點選表格某一列 → 下方地圖定位並顯示 Google 評分；📖 可開啟 Google Maps 看完整評價。")
@@ -156,6 +143,11 @@ def _render_list_table(df: pd.DataFrame, *, sort_by: str) -> pd.DataFrame:
         column_order=list(_DISPLAY_COLUMNS),
         column_config={
             "店名": st.column_config.TextColumn("店名", width="medium"),
+            "Google Map": st.column_config.LinkColumn(
+                "Google Map",
+                display_text="📖 開啟",
+                width="small",
+            ),
             "距離": st.column_config.TextColumn("距離", width="small"),
             "Google 評分": st.column_config.NumberColumn("Google 評分", format="%.1f", width="small"),
             "評論數": st.column_config.NumberColumn("評論數", format="%d", width="small"),
@@ -164,22 +156,18 @@ def _render_list_table(df: pd.DataFrame, *, sort_by: str) -> pd.DataFrame:
             "黃氏星等": st.column_config.NumberColumn("黃氏星等", format="%.2f", width="small"),
             "綜合分數": st.column_config.NumberColumn("綜合分數", format="%.4f", width="small"),
             "星等分級": st.column_config.TextColumn("星等分級", width="small"),
-            "Google Maps": st.column_config.LinkColumn(
-                "Google Maps",
-                display_text="📖 開啟",
-                width="small",
-            ),
             "分類": st.column_config.TextColumn("分類", width="small"),
         },
         on_select="rerun",
         selection_mode="single-row",
         width="stretch",
         hide_index=True,
+        height=min(560, 38 + len(table) * 35),
         key="restaurant_table_pick",
     )
     if pick_event.selection.rows:
         return ordered.iloc[int(pick_event.selection.rows[0])]
-    return _pick_focus_row(ordered)
+    return None
 
 
 def _render_focus_card(row: pd.Series) -> None:
@@ -402,10 +390,10 @@ def run() -> None:
         min_reviews = st.number_input("最少評論數", min_value=0, value=0, step=1)
         sort_by = st.selectbox(
             "排序方式",
-            options=("huang", "composite", "rating", "distance"),
+            options=("composite", "huang", "rating", "distance"),
             format_func=lambda x: {
-                "huang": "黃氏星等（高到低）",
                 "composite": "綜合（推薦）",
+                "huang": "黃氏星等（高到低）",
                 "rating": "貝氏星等（高到低）",
                 "distance": "距離（近到遠）",
             }[x],

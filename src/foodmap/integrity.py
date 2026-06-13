@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 from pathlib import Path
 
 AUTHOR = "Boson Huang"
@@ -22,10 +21,10 @@ _CORE_FILES: tuple[tuple[str, str], ...] = (
 
 
 def _module_path(filename: str) -> Path:
-    spec = importlib.util.find_spec(f"foodmap.{filename[:-3]}")
-    if spec is None or not spec.origin:
+    path = Path(__file__).resolve().parent / filename
+    if not path.is_file():
         raise CoreIntegrityError(f"找不到核心模組：{filename}")
-    return Path(spec.origin)
+    return path
 
 
 def _sha256(path: Path) -> str:
