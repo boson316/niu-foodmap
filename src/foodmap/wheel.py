@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 from typing import Any, Mapping, Sequence
 
 _WHEEL_COLORS = (
@@ -25,17 +26,72 @@ def _short_label(name: str, *, max_len: int = 10) -> str:
     return f"{compact[: max_len - 1]}…"
 
 
-def _conic_gradient(segment_count: int) -> str:
+def spin_alignment_degrees(winner_index: int, segment_count: int) -> float:
+    """Absolute rotation (mod 360) placing segment ``winner_index`` under the top pointer."""
+    if segment_count <= 0 or not 0 <= winner_index < segment_count:
+        raise ValueError("invalid wheel spin indices")
+    slice_angle = 360.0 / segment_count
+    return (360.0 - winner_index * slice_angle) % 360.0
+
+
+def spin_delta_degrees(
+    current_rotation: float,
+    winner_index: int,
+    segment_count: int,
+    *,
+    extra_turns: int = 0,
+) -> float:
+    """Clockwise delta from ``current_rotation`` so the winner ends under the pointer."""
+    current_mod = current_rotation % 360.0
+    if current_mod < 0:
+        current_mod += 360.0
+    target_mod = spin_alignment_degrees(winner_index, segment_count)
+    delta = target_mod - current_mod
+    if delta <= 0:
+        delta += 360.0
+    return extra_turns * 360.0 + delta
+
+
+def segment_index_at_rotation(rotation_deg: float, segment_count: int) -> int:
+    """Which segment (0-based) sits under the top pointer after ``rotation_deg`` clockwise."""
     if segment_count <= 0:
-        return "#eee"
-    step = 360.0 / segment_count
-    stops: list[str] = []
+        raise ValueError("segment_count must be positive")
+    slice_angle = 360.0 / segment_count
+    norm = rotation_deg % 360.0
+    if norm < 0:
+        norm += 360.0
+    return int((360.0 - norm + slice_angle / 2.0) // slice_angle) % segment_count
+
+
+def _polar_xy(cx: float, cy: float, radius: float, angle_from_top_deg: float) -> tuple[float, float]:
+    """Polar coords with 0° at 12 o'clock, increasing clockwise."""
+    rad = math.radians(angle_from_top_deg - 90.0)
+    return cx + radius * math.cos(rad), cy + radius * math.sin(rad)
+
+
+def _svg_wheel_rotor(segment_count: int) -> str:
+    cx = cy = 200.0
+    outer_r = 190.0
+    slice_angle = 360.0 / segment_count
+    large_arc = 1 if slice_angle > 180.0 else 0
+    parts: list[str] = []
     for index in range(segment_count):
-        start = step * index
-        end = step * (index + 1)
+        center = index * slice_angle
+        start = center - slice_angle / 2.0
+        end = center + slice_angle / 2.0
         color = _WHEEL_COLORS[index % len(_WHEEL_COLORS)]
-        stops.append(f"{color} {start:.4f}deg {end:.4f}deg")
-    return f"conic-gradient(from -{step / 2:.4f}deg, {', '.join(stops)})"
+        x1, y1 = _polar_xy(cx, cy, outer_r, start)
+        x2, y2 = _polar_xy(cx, cy, outer_r, end)
+        parts.append(
+            f'<path d="M{cx:.2f},{cy:.2f} L{x1:.2f},{y1:.2f} '
+            f'A{outer_r:.2f},{outer_r:.2f} 0 {large_arc},1 {x2:.2f},{y2:.2f} Z" fill="{color}"/>'
+        )
+        tx, ty = _polar_xy(cx, cy, outer_r * 0.62, center)
+        parts.append(
+            f'<text x="{tx:.2f}" y="{ty:.2f}" text-anchor="middle" '
+            f'dominant-baseline="middle" class="wheel-svg-label">{index + 1}</text>'
+        )
+    return "\n".join(parts)
 
 
 def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
@@ -55,15 +111,10 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
         for item in restaurants
     ]
     segment_count = len(payload)
-    gradient = _conic_gradient(segment_count)
+    svg_segments = _svg_wheel_rotor(segment_count)
     data_json = json.dumps(payload, ensure_ascii=False)
-    label_rows = "\n".join(
-        f'<span class="wheel-slice-label" style="--i:{index};" title="{item["name"]}">'
-        f'{index + 1}</span>'
-        for index, item in enumerate(payload)
-    )
     legend_rows = "\n".join(
-        f'<li><span class="wheel-legend-no">{index + 1}</span>'
+        f'<li data-index="{index}"><span class="wheel-legend-no">{index + 1}</span>'
         f'<span class="wheel-legend-name">{item["short_label"]}</span>'
         f'<span class="wheel-legend-meta">{item["composite_score"]:.2f}</span></li>'
         for index, item in enumerate(payload)
@@ -115,37 +166,28 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   inset: 0;
   border-radius: 50%;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
 }}
-.wheel-disc {{
+.wheel-svg {{
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  background: {gradient};
-  transition: transform 4.2s cubic-bezier(0.12, 0.75, 0.08, 1);
-  will-change: transform;
+  display: block;
 }}
-.wheel-labels {{
-  position: absolute;
-  inset: 0;
+#wheel-rotor {{
   transition: transform 4.2s cubic-bezier(0.12, 0.75, 0.08, 1);
+  transform-origin: 200px 200px;
+}}
+.wheel-svg-label {{
+  font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  fill: #111;
   pointer-events: none;
 }}
-.wheel-slice-label {{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 28%;
-  transform-origin: 0 0;
-  transform:
-    rotate(calc((360deg / {segment_count}) * var(--i)))
-    translate(24%, -50%)
-    rotate(calc((360deg / {segment_count}) * -0.5));
-  font-size: clamp(0.95rem, 3.8vw, 1.15rem);
-  font-weight: 800;
-  color: #111;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
-  line-height: 1;
-  text-align: center;
+.wheel-hub-svg {{
+  fill: #fff;
+  stroke: #1a73e8;
+  stroke-width: 4;
 }}
 .wheel-legend {{
   margin: 0 0 1rem;
@@ -170,6 +212,12 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   gap: 0.4rem;
   font-size: 0.88rem;
   color: #3c4043;
+  border-radius: 8px;
+  padding: 0.15rem 0.25rem;
+}}
+.wheel-legend-active {{
+  background: #e8f0fe;
+  outline: 1px solid #aecbfa;
 }}
 .wheel-legend-no {{
   display: inline-flex;
@@ -196,24 +244,15 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   font-size: 0.78rem;
   flex-shrink: 0;
 }}
-.wheel-hub {{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 18%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: #fff;
-  border: 4px solid #1a73e8;
-  z-index: 2;
-  box-shadow: inset 0 0 0 2px #e8f0fe;
-}}
 .wheel-actions {{
   display: flex;
   justify-content: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  margin: 0 0 1rem;
+}}
+.wheel-actions-top {{
+  margin-top: 0.25rem;
 }}
 .wheel-btn {{
   min-height: 48px;
@@ -243,7 +282,7 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   color: #3c4043;
 }}
 .wheel-result {{
-  margin-top: 1rem;
+  margin: 0 0 1rem;
   padding: 1rem 1.1rem 1.25rem;
   border-radius: 16px;
   background: linear-gradient(180deg, #f8fbff, #eef4ff);
@@ -287,25 +326,26 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
     <h3>今天吃什麼？轉一下就知道</h3>
     <p>轉盤顯示編號；對照表為綜合分數 Top {segment_count}（評價＋距離）。</p>
   </div>
-  <div class="wheel-stage" aria-label="餐廳轉盤">
-    <div class="wheel-pointer" aria-hidden="true"></div>
-    <div class="wheel-disc-wrap">
-      <div class="wheel-disc" id="wheel-disc"></div>
-      <div class="wheel-labels" id="wheel-labels">
-        {label_rows}
-      </div>
-      <div class="wheel-hub" aria-hidden="true"></div>
-    </div>
-  </div>
-  <div class="wheel-legend" aria-label="轉盤編號對照">
-    <ul>{legend_rows}</ul>
-  </div>
-  <div class="wheel-actions">
+  <div class="wheel-actions wheel-actions-top">
     <button class="wheel-btn wheel-btn-primary" id="wheel-spin-btn" type="button">開始轉盤</button>
     <button class="wheel-btn wheel-btn-ghost" id="wheel-reset-btn" type="button">重置</button>
   </div>
+  <div class="wheel-stage" aria-label="餐廳轉盤">
+    <div class="wheel-pointer" aria-hidden="true"></div>
+    <div class="wheel-disc-wrap">
+      <svg class="wheel-svg" viewBox="0 0 400 400" role="img" aria-label="餐廳轉盤盤面">
+        <g id="wheel-rotor">
+          {svg_segments}
+        </g>
+        <circle class="wheel-hub-svg" cx="200" cy="200" r="34" />
+      </svg>
+    </div>
+  </div>
   <div class="wheel-result" id="wheel-result" aria-live="polite">
     <p>按下「開始轉盤」，讓命運決定午餐／晚餐。</p>
+  </div>
+  <div class="wheel-legend" aria-label="轉盤編號對照">
+    <ul>{legend_rows}</ul>
   </div>
 </div>
 <script>
@@ -313,15 +353,35 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   const restaurants = {data_json};
   const segmentCount = restaurants.length;
   const sliceAngle = 360 / segmentCount;
-  const disc = document.getElementById("wheel-disc");
-  const labels = document.getElementById("wheel-labels");
+  const rotor = document.getElementById("wheel-rotor");
   const spinBtn = document.getElementById("wheel-spin-btn");
   const resetBtn = document.getElementById("wheel-reset-btn");
   const result = document.getElementById("wheel-result");
   let rotation = 0;
   let spinning = false;
 
+  function applyRotation() {{
+    rotor.style.transform = `rotate(${{rotation}}deg)`;
+  }}
+
+  function rotationMod(rot) {{
+    return ((rot % 360) + 360) % 360;
+  }}
+
+  function segmentAtPointer(rot) {{
+    const norm = rotationMod(rot);
+    const index = Math.floor((360 - norm + sliceAngle / 2) / sliceAngle) % segmentCount;
+    return (index + segmentCount) % segmentCount;
+  }}
+
   function renderWinner(item, winnerIndex) {{
+    document.querySelectorAll(".wheel-legend li").forEach((row) => {{
+      row.classList.remove("wheel-legend-active");
+    }});
+    const activeRow = document.querySelector(`.wheel-legend li[data-index="${{winnerIndex}}"]`);
+    if (activeRow) {{
+      activeRow.classList.add("wheel-legend-active");
+    }}
     result.innerHTML = `
       <h4>#${{winnerIndex + 1}} ${{item.name}}</h4>
       <p>綜合分數 <strong>${{item.composite_score.toFixed(2)}}</strong>
@@ -329,6 +389,7 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
         　距離 <strong>${{item.distance_display}}</strong></p>
       <a href="${{item.maps_url}}" target="_blank" rel="noopener">📖 開啟 Google Maps</a>
     `;
+    result.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
   }}
 
   function spin() {{
@@ -339,14 +400,16 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
 
     const winnerIndex = Math.floor(Math.random() * segmentCount);
     const extraTurns = 4 + Math.floor(Math.random() * 3);
-    const target = extraTurns * 360 + (360 - winnerIndex * sliceAngle - sliceAngle / 2);
-    rotation += target;
-    const transform = `rotate(${{rotation}}deg)`;
-    disc.style.transform = transform;
-    labels.style.transform = transform;
+    const currentMod = rotationMod(rotation);
+    const targetMod = rotationMod(360 - winnerIndex * sliceAngle);
+    let delta = targetMod - currentMod;
+    if (delta <= 0) delta += 360;
+    rotation += extraTurns * 360 + delta;
+    applyRotation();
 
     window.setTimeout(() => {{
-      renderWinner(restaurants[winnerIndex], winnerIndex);
+      const actualIndex = segmentAtPointer(rotation);
+      renderWinner(restaurants[actualIndex], actualIndex);
       spinning = false;
       spinBtn.disabled = false;
     }}, 4300);
@@ -355,15 +418,15 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   function resetWheel() {{
     if (spinning) return;
     rotation = 0;
-    disc.style.transition = "none";
-    labels.style.transition = "none";
-    disc.style.transform = "rotate(0deg)";
-    labels.style.transform = "rotate(0deg)";
+    rotor.style.transition = "none";
+    applyRotation();
     window.requestAnimationFrame(() => {{
-      disc.style.transition = "";
-      labels.style.transition = "";
+      rotor.style.transition = "";
     }});
     result.innerHTML = "<p>按下「開始轉盤」，讓命運決定午餐／晚餐。</p>";
+    document.querySelectorAll(".wheel-legend li").forEach((row) => {{
+      row.classList.remove("wheel-legend-active");
+    }});
   }}
 
   spinBtn.addEventListener("click", spin);

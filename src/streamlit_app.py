@@ -21,7 +21,6 @@ import streamlit.components.v1 as components
 from foodmap.providers import MockRestaurantProvider
 from foodmap.integrity import CoreIntegrityError, author_notice, verify_core_modules
 from foodmap.service import FoodMapService, SortMode
-from foodmap.visit_counter import build_visit_counter_html, counter_page_url
 from foodmap.wheel import build_wheel_html
 
 _TIER_LABEL = {"low": "低", "medium": "普通", "high": "高"}
@@ -203,12 +202,12 @@ def _render_map(
         map_df["selected"] = map_df["id"] == focus_row["id"]
         map_center_lat = float(focus_row["lat"])
         map_center_lon = float(focus_row["lon"])
-        zoom = 15
+        zoom = 16
     else:
         map_df["selected"] = False
         map_center_lat = center_lat
         map_center_lon = center_lon
-        zoom = 13
+        zoom = 15
 
     map_df["tooltip_html"] = map_df.apply(
         lambda r: (
@@ -224,7 +223,9 @@ def _render_map(
         data=map_df[~map_df["selected"]],
         get_position=["lon", "lat"],
         get_fill_color=_GOOGLE_PIN,
-        get_radius=80,
+        get_radius=1,
+        radius_min_pixels=6,
+        radius_max_pixels=6,
         pickable=True,
     )
     focus_layer = pdk.Layer(
@@ -232,7 +233,9 @@ def _render_map(
         data=map_df[map_df["selected"]],
         get_position=["lon", "lat"],
         get_fill_color=_HIGHLIGHT_PIN,
-        get_radius=130,
+        get_radius=1,
+        radius_min_pixels=10,
+        radius_max_pixels=10,
         pickable=True,
     )
     center_layer = pdk.Layer(
@@ -240,7 +243,9 @@ def _render_map(
         data=pd.DataFrame({"lat": [center_lat], "lon": [center_lon], "name": ["宜大校本部"]}),
         get_position=["lon", "lat"],
         get_fill_color=_CAMPUS_PIN,
-        get_radius=100,
+        get_radius=1,
+        radius_min_pixels=8,
+        radius_max_pixels=8,
         pickable=True,
     )
     layers = [base_layer, center_layer]
@@ -341,10 +346,18 @@ def _render_wheel_selector(df: pd.DataFrame) -> None:
 
 
 def _render_footer() -> None:
-    components.html(
-        build_visit_counter_html(counter_page_url(), author_line=author_notice()),
-        height=40,
-    )
+    author = author_notice()
+    try:
+        from foodmap.visit_counter import build_visit_counter_html, counter_page_url
+
+        footer_html = build_visit_counter_html(counter_page_url(), author_line=author)
+    except ImportError:
+        footer_html = (
+            f'<div style="font-size:0.85rem;color:#5f6368;line-height:1.6;padding:0.25rem 0;">'
+            f"{html.escape(author)} · 瀏覽人次統計暫不可用"
+            f"</div>"
+        )
+    components.html(footer_html, height=40)
 
 
 def run() -> None:
@@ -436,7 +449,7 @@ def run() -> None:
         focus_row = _render_list_table(df, sort_by=sort_by)
 
         st.subheader("地圖")
-        st.caption("淺色街道圖 · 🔵 宜大校本部 · 🔴 餐廳 · 🟡 你選的店")
+        st.caption("淺色街道圖 · 🔵 宜大校本部 · 🔴 餐廳（點狀標記）· 🟡 你選的店")
         if focus_row is not None:
             _render_focus_card(focus_row)
         map_df = df[

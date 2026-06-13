@@ -1,4 +1,5 @@
 """Visit counter: browser-side fetch (works on Streamlit Cloud)."""
+# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
