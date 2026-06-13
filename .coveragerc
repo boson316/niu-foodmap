@@ -1,0 +1,8 @@
+[run]
+source = src
+omit =
+    src/streamlit_app.py
+
+[report]
+fail_under = 70
+show_missing = true
