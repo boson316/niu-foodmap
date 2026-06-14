@@ -54,9 +54,17 @@ def build_visit_counter_html(page_url: str, *, author_line: str) -> str:
     unavailable_js = json.dumps(_UNAVAILABLE_LABEL)
     author_html = html.escape(author_line, quote=True)
     return f"""
-<div style="font-size:0.85rem;color:#5f6368;line-height:1.6;padding:0.25rem 0;">
+<div style="font-size:0.85rem;color:#5f6368;line-height:1.55;padding:0.35rem 0 0.5rem;max-width:100%;word-break:break-word;">
   <span>{author_html} · </span><span id="niu-visit-count">累計瀏覽 … 人次</span>
 </div>
+<style>
+@media (max-width: 768px) {{
+  body {{
+    margin: 0;
+    padding: 0 4.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) 0;
+  }}
+}}
+</style>
 <script>
 (function () {{
   const getUrl = {get_url_js};

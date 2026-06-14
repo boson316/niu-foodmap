@@ -316,6 +316,37 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   text-decoration: none;
   font-weight: 600;
 }}
+.wheel-maps-btn {{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.75rem;
+  padding: 0.8rem 1.35rem;
+  min-height: 48px;
+  min-width: min(100%, 240px);
+  border: none;
+  border-radius: 999px;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.35);
+}}
+.wheel-maps-btn:active {{
+  transform: scale(0.98);
+}}
+@media (max-width: 768px) {{
+  .wheel-app {{
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  }}
+  .wheel-legend {{
+    max-height: 180px;
+  }}
+}}
 .wheel-empty {{
   text-align: center;
   color: #5f6368;
@@ -360,6 +391,19 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   let rotation = 0;
   let spinning = false;
 
+  function openMapsUrl(url) {{
+    if (!url) return;
+    try {{
+      const opener = window.top || window.parent || window;
+      const opened = opener.open(url, "_blank", "noopener,noreferrer");
+      if (!opened) {{
+        window.location.href = url;
+      }}
+    }} catch (_err) {{
+      window.location.href = url;
+    }}
+  }}
+
   function applyRotation() {{
     rotor.style.transform = `rotate(${{rotation}}deg)`;
   }}
@@ -387,7 +431,7 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
       <p>綜合分數 <strong>${{item.composite_score.toFixed(2)}}</strong>
         　黃氏 <strong>${{item.huang_rating.toFixed(2)}}</strong>
         　距離 <strong>${{item.distance_display}}</strong></p>
-      <a href="${{item.maps_url}}" target="_blank" rel="noopener">📖 開啟 Google Maps</a>
+      <button type="button" class="wheel-maps-btn" data-maps-url="${{item.maps_url}}">📖 開啟 Google Maps</button>
     `;
     result.scrollIntoView({{ behavior: "smooth", block: "nearest" }});
   }}
@@ -431,6 +475,12 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
 
   spinBtn.addEventListener("click", spin);
   resetBtn.addEventListener("click", resetWheel);
+  result.addEventListener("click", (event) => {{
+    const mapsBtn = event.target.closest(".wheel-maps-btn");
+    if (!mapsBtn) return;
+    event.preventDefault();
+    openMapsUrl(mapsBtn.getAttribute("data-maps-url"));
+  }});
 }})();
 </script>
 """

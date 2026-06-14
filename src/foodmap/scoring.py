@@ -87,7 +87,9 @@ def dataset_prior_mean(restaurants: Iterable[Restaurant]) -> float:
     return num / den if den else rating_sum / count
 
 
-def composite_from_rating(reputation_score: float, distance_km: float, *, decay_km: float) -> float:
+def composite_from_rating(
+    reputation_score: float, distance_km: float,
+     *, decay_km: float) -> float:
     """評價分 × 距離衰減 → 綜合分（愈近愈高）。"""
     if decay_km <= 0:
         raise ValueError("decay_km must be positive")

@@ -94,7 +94,8 @@ class FoodMapService:
         for r in all_items:
             if r.review_count < min_reviews:
                 continue
-            if not approx_in_radius_bbox(center_lat, center_lon, r.lat, r.lon, radius_km):
+            if not approx_in_radius_bbox(center_lat, center_lon,
+             r.lat, r.lon, radius_km):
                 continue
             dist = haversine_km_from_center(center, r.lat, r.lon)
             if dist > radius_km:

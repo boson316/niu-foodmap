@@ -31,11 +31,21 @@ _MOBILE_CSS = """
 .block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 100%; }
 [data-testid="stDataFrame"] { width: 100%; }
 [data-testid="stDataFrame"] > div { width: 100%; }
+iframe[title="streamlit_components_v1.components.html"] {
+  border: none;
+}
 @media (max-width: 768px) {
-  .block-container { padding-left: 0.85rem; padding-right: 0.85rem; }
+  .block-container {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
   [data-testid="stSidebar"] { min-width: 280px !important; }
   h1 { font-size: 1.45rem !important; }
   h2, h3 { font-size: 1.1rem !important; }
+  [data-testid="stVerticalBlock"] > div:has(iframe[title="streamlit_components_v1.components.html"]) {
+    margin-bottom: 0.35rem;
+  }
 }
 div[data-testid="stTabs"] button { min-height: 44px; font-size: 0.95rem; }
 </style>
@@ -342,7 +352,7 @@ def _render_wheel_selector(df: pd.DataFrame) -> None:
     wheel_items = wheel_df[
         ["name", "composite_score", "huang_rating", "distance_display", "maps_url"]
     ].to_dict(orient="records")
-    components.html(build_wheel_html(wheel_items), height=920, scrolling=True)
+    components.html(build_wheel_html(wheel_items), height=960, scrolling=True)
 
 
 def _render_footer() -> None:
@@ -357,7 +367,7 @@ def _render_footer() -> None:
             f"{html.escape(author)} · 瀏覽人次統計暫不可用"
             f"</div>"
         )
-    components.html(footer_html, height=40)
+    components.html(footer_html, height=76, scrolling=False)
 
 
 def run() -> None:
