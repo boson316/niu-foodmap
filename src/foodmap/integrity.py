@@ -41,7 +41,8 @@ def verify_core_modules() -> None:
         if actual != expected:
             raise CoreIntegrityError(
                 f"核心模組 {filename} 完整性驗證失敗（可能被竄改）。"
-                " 請使用作者官方部署版本。"
+                f" expected={expected[:12]}… actual={actual[:12]}…"
+                " 請執行 python scripts/sync_integrity_hashes.py 後重新部署。"
             )
 
 
