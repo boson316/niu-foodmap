@@ -14,8 +14,8 @@ class CoreIntegrityError(RuntimeError):
 
 
 _CORE_FILES: tuple[tuple[str, str], ...] = (
-    ("scoring.py", "eb792d83207a9ac0e9285867aaaf03f98aa00b840054846a99d93924599b61dc"),
-    ("service.py", "61efd7e8ebfd82b5270be32cb1ca0ebfaf3d3f4cba4ca6e1080c630a85330506"),
+    ("scoring.py", "f780d1a853c626bcf33e310c62c315b2a34e5b0c4c690049e9182d9d5c9502c1"),
+    ("service.py", "54b79cbbed1f25a0cf1d3bd0f163ea7d92868e6c434b030f603f2f62d3b770e0"),
     ("wheel.py", "82807b0edc3d1052c5d584cb7661b532c9c50edd06adc72b501951deeccfd5aa"),
 )
 
