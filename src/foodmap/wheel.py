@@ -339,6 +339,15 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
 .wheel-maps-btn:active {{
   transform: scale(0.98);
 }}
+.wheel-maps-fallback {{
+  margin: 0.65rem 0 0;
+  font-size: 0.92rem;
+}}
+.wheel-maps-fallback a {{
+  color: #1a73e8;
+  font-weight: 600;
+  text-decoration: underline;
+}}
 @media (max-width: 768px) {{
   .wheel-app {{
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
@@ -391,17 +400,49 @@ def build_wheel_html(restaurants: Sequence[Mapping[str, Any]]) -> str:
   let rotation = 0;
   let spinning = false;
 
-  function openMapsUrl(url) {{
-    if (!url) return;
+  function escapeHtml(text) {{
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }}
+
+  function openExternalUrl(url) {{
     try {{
-      const opener = window.top || window.parent || window;
-      const opened = opener.open(url, "_blank", "noopener,noreferrer");
-      if (!opened) {{
-        window.location.href = url;
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return true;
+    }} catch (_err) {{
+      /* fall through */
+    }}
+    try {{
+      const root = window.top || window.parent || window;
+      const opened = root.open(url, "_blank", "noopener,noreferrer");
+      if (opened) {{
+        opened.opener = null;
+        return true;
       }}
     }} catch (_err) {{
-      window.location.href = url;
+      /* fall through */
     }}
+    return false;
+  }}
+
+  function openMapsUrl(url) {{
+    if (!url) return;
+    if (openExternalUrl(url)) return;
+    result.insertAdjacentHTML(
+      "beforeend",
+      `<p class="wheel-maps-fallback"><a href="${{escapeHtml(url)}}" target="_blank" rel="noopener noreferrer">若未自動開啟，請點此開啟 Google Maps</a></p>`
+    );
   }}
 
   function applyRotation() {{

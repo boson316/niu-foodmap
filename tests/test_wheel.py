@@ -33,6 +33,8 @@ def test_build_wheel_html_contains_spin_controls() -> None:
     assert "wheel-legend" in html
     assert "wheel-maps-btn" in html
     assert "openMapsUrl" in html
+    assert "openExternalUrl" in html
+    assert "window.location.href" not in html
     assert 'class="wheel-svg-label">1</text>' in html
     assert 'id="wheel-rotor"' in html
 
